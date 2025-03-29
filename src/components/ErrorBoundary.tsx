@@ -30,33 +30,44 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       const isSupabaseError = this.state.error?.message.includes('Supabase');
       
       return (
-        <div className="min-h-screen bg-anime-background flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-anime-card p-8 rounded-lg max-w-md w-full">
+        <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-gray-800 p-8 rounded-lg max-w-md w-full shadow-lg">
             <h1 className="text-2xl font-bold text-red-500 mb-4">Something went wrong</h1>
             
             {isSupabaseError ? (
               <>
-                <p className="mb-4 text-anime-muted">
-                  The application couldn't connect to Supabase. Please make sure you've set up the required environment variables.
+                <p className="mb-4 text-gray-300">
+                  We're having trouble connecting to the database. This demo requires Supabase configuration.
                 </p>
-                <div className="bg-gray-800 p-4 rounded text-left mb-4 overflow-auto">
+                <div className="bg-gray-900 p-4 rounded text-left mb-4 overflow-auto">
                   <p className="text-green-400 text-sm font-mono">
                     # Create a .env file in your project root with:<br/>
                     VITE_SUPABASE_URL=your_supabase_url<br/>
                     VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
                   </p>
                 </div>
-                <p className="text-sm text-anime-muted mb-4">
+                <p className="text-sm text-gray-400 mb-4">
                   You can find these values in your Supabase project dashboard under Project Settings &gt; API.
+                </p>
+                <p className="text-gray-300 mb-6">
+                  To try this demo without setting up Supabase, you can view the UI in read-only mode:
                 </p>
               </>
             ) : (
-              <p className="mb-4 text-anime-muted">{this.state.error?.message || 'An unknown error occurred'}</p>
+              <p className="mb-4 text-gray-300">{this.state.error?.message || 'An unknown error occurred'}</p>
             )}
             
             <Button 
+              onClick={() => window.location.href = '/?demo=true'} 
+              className="bg-blue-600 hover:bg-blue-700 text-white w-full mb-3"
+            >
+              View Demo Mode
+            </Button>
+            
+            <Button 
               onClick={() => window.location.reload()} 
-              className="bg-anime-primary hover:bg-anime-primary/90 w-full"
+              variant="outline"
+              className="w-full"
             >
               Try Again
             </Button>

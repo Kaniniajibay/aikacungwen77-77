@@ -5,6 +5,9 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Create a mock client for development when environment variables are missing
+let supabase: ReturnType<typeof createClient>;
+
 // Check if environment variables are properly set
 if (!supabaseUrl || !supabaseAnonKey) {
   const missingVars = [];
@@ -22,12 +25,34 @@ if (!supabaseUrl || !supabaseAnonKey) {
     You can get these values from your Supabase project dashboard.
   `);
 
-  // Create a fallback client that will show an error message
-  throw new Error(`Missing required Supabase environment variables: ${missingVars.join(', ')}. Please check your console for more information.`);
+  // Create a mock client that returns empty data but doesn't throw errors
+  // This allows the app to at least render in development
+  supabase = {
+    from: () => ({
+      select: () => ({ data: [], error: null }),
+      insert: () => ({ data: null, error: null }),
+      update: () => ({ data: null, error: null }),
+      delete: () => ({ data: null, error: null }),
+      eq: () => ({ data: [], error: null }),
+      single: () => ({ data: null, error: null }),
+    }),
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: { message: 'Supabase not configured' } }),
+      signOut: () => Promise.resolve({ error: null }),
+    },
+    storage: {
+      from: () => ({
+        upload: () => Promise.resolve({ data: null, error: null }),
+      }),
+    },
+  } as any;
+} else {
+  // Create the real Supabase client
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
 
-// Create the Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
 
 export type Database = {
   public: {
@@ -84,6 +109,10 @@ export type Admin = {
 
 // Helper function to check if user is authenticated as admin
 export const checkAdminAuth = async () => {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return { authenticated: false, admin: null, error: 'Supabase not configured' };
+  }
+  
   const { data } = await supabase.auth.getSession();
   
   if (!data.session) {
