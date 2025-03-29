@@ -1,36 +1,37 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { checkAdminAuth } from '@/lib/supabase';
 import AnimeForm from '@/components/AnimeForm';
+import { Loader2 } from 'lucide-react';
 
 const AdminNewAnime = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const { data } = await supabase.auth.getSession();
+    const verifyAdmin = async () => {
+      setIsLoading(true);
+      const { authenticated } = await checkAdminAuth();
       
-      if (!data.session) {
+      if (!authenticated) {
         navigate('/admin');
         return;
       }
       
-      // Verify if the user is an admin
-      const { data: adminData, error: adminError } = await supabase
-        .from('admins')
-        .select('role')
-        .eq('email', data.session.user.email)
-        .single();
-        
-      if (adminError || !adminData || adminData.role !== 'admin') {
-        await supabase.auth.signOut();
-        navigate('/admin');
-      }
+      setIsLoading(false);
     };
     
-    checkAdmin();
+    verifyAdmin();
   }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-anime-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-anime-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-anime-background">
