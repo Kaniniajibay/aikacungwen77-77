@@ -53,7 +53,7 @@ const AdminEditAnime = () => {
           
         if (error) throw error;
         
-        setAnime(data);
+        setAnime(data as Anime);
       } catch (error) {
         console.error('Error fetching anime:', error);
         toast({

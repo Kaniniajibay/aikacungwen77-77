@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase, type Anime, type Episode } from '@/lib/supabase';
@@ -106,8 +105,8 @@ const AdminEpisodes = () => {
           
         if (episodesError) throw episodesError;
         
-        setAnime(animeData);
-        setEpisodes(episodesData || []);
+        setAnime(animeData as Anime);
+        setEpisodes(episodesData as Episode[] || []);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -212,7 +211,7 @@ const AdminEpisodes = () => {
         
         // Update local state
         setEpisodes(episodes.map(ep => 
-          ep.id === currentEpisode.id ? { ...ep, ...currentEpisode } as Episode : ep
+          ep.id === currentEpisode.id ? { ...ep, ...currentEpisode as Episode } : ep
         ));
         
         toast({
@@ -238,7 +237,7 @@ const AdminEpisodes = () => {
         if (error) throw error;
         
         // Add to local state
-        setEpisodes([...episodes, data]);
+        setEpisodes([...episodes, data as Episode]);
         
         toast({
           title: "Episode added",

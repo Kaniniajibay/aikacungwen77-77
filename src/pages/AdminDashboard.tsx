@@ -68,7 +68,7 @@ const AdminDashboard = () => {
           
         if (error) throw error;
         
-        setAnimeList(data || []);
+        setAnimeList(data as Anime[] || []);
       } catch (error) {
         console.error('Error fetching anime list:', error);
         toast({

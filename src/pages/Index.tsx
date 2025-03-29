@@ -38,11 +38,11 @@ const Index = () => {
         if (popularError) throw popularError;
         
         // Set a featured anime (first in the recent list for demo purposes)
-        const featured = recentData && recentData.length > 0 ? recentData[0] : null;
+        const featured = recentData && recentData.length > 0 ? recentData[0] as Anime : null;
         
         setFeaturedAnime(featured);
-        setRecentAnime(recentData || []);
-        setPopularAnime(popularData || []);
+        setRecentAnime(recentData as Anime[] || []);
+        setPopularAnime(popularData as Anime[] || []);
       } catch (error) {
         console.error('Error fetching anime data:', error);
         toast({

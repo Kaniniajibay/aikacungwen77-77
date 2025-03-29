@@ -40,8 +40,8 @@ const AnimeDetail = () => {
           
         if (episodesError) throw episodesError;
         
-        setAnime(animeData);
-        setEpisodes(episodesData || []);
+        setAnime(animeData as Anime);
+        setEpisodes(episodesData as Episode[] || []);
       } catch (error) {
         console.error('Error fetching anime details:', error);
         toast({

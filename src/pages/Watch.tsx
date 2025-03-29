@@ -51,21 +51,22 @@ const Watch = () => {
           
         if (allEpisodesError) throw allEpisodesError;
         
-        setAnime(animeData);
-        setEpisode(episodeData);
+        setAnime(animeData as Anime);
+        setEpisode(episodeData as Episode);
         
         // Find previous and next episodes
         if (allEpisodes) {
-          const currentIndex = allEpisodes.findIndex(ep => ep.id === episodeId);
+          const typedEpisodes = allEpisodes as Episode[];
+          const currentIndex = typedEpisodes.findIndex(ep => ep.id === episodeId);
           
           if (currentIndex > 0) {
-            setPrevEpisode(allEpisodes[currentIndex - 1]);
+            setPrevEpisode(typedEpisodes[currentIndex - 1]);
           } else {
             setPrevEpisode(null);
           }
           
-          if (currentIndex < allEpisodes.length - 1) {
-            setNextEpisode(allEpisodes[currentIndex + 1]);
+          if (currentIndex < typedEpisodes.length - 1) {
+            setNextEpisode(typedEpisodes[currentIndex + 1]);
           } else {
             setNextEpisode(null);
           }
