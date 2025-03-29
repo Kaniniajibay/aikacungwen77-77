@@ -64,7 +64,6 @@ const AdminEpisodes = () => {
         return;
       }
       
-      // Verify if the user is an admin
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
         .select('role')
@@ -87,7 +86,6 @@ const AdminEpisodes = () => {
       try {
         setIsLoading(true);
         
-        // Fetch anime details
         const { data: animeData, error: animeError } = await supabase
           .from('anime')
           .select('*')
@@ -96,7 +94,6 @@ const AdminEpisodes = () => {
           
         if (animeError) throw animeError;
         
-        // Fetch episodes
         const { data: episodesData, error: episodesError } = await supabase
           .from('episodes')
           .select('*')
@@ -128,7 +125,6 @@ const AdminEpisodes = () => {
       setCurrentEpisode(episode);
       setIsEditing(true);
     } else {
-      // For new episode, set the next episode number
       const nextEpisodeNumber = episodes.length > 0
         ? Math.max(...episodes.map(ep => ep.episode_number)) + 1
         : 1;
@@ -175,7 +171,6 @@ const AdminEpisodes = () => {
   };
 
   const handleSaveEpisode = async () => {
-    // Validation
     if (
       !currentEpisode.title || 
       !currentEpisode.video_url || 
@@ -194,7 +189,6 @@ const AdminEpisodes = () => {
       setFormLoading(true);
       
       if (isEditing && currentEpisode.id) {
-        // Update existing episode
         const { error } = await supabase
           .from('episodes')
           .update({
@@ -209,7 +203,6 @@ const AdminEpisodes = () => {
           
         if (error) throw error;
         
-        // Update local state
         setEpisodes(episodes.map(ep => 
           ep.id === currentEpisode.id ? { ...ep, ...currentEpisode as Episode } : ep
         ));
@@ -219,7 +212,6 @@ const AdminEpisodes = () => {
           description: "The episode has been updated successfully",
         });
       } else {
-        // Create new episode
         const { data, error } = await supabase
           .from('episodes')
           .insert({
@@ -236,7 +228,6 @@ const AdminEpisodes = () => {
           
         if (error) throw error;
         
-        // Add to local state
         setEpisodes([...episodes, data as Episode]);
         
         toast({
@@ -389,7 +380,6 @@ const AdminEpisodes = () => {
         )}
       </main>
       
-      {/* Episode Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-anime-card border-anime-primary/20 sm:max-w-[500px]">
           <DialogHeader>
@@ -526,7 +516,6 @@ const AdminEpisodes = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!episodeToDelete} onOpenChange={() => setEpisodeToDelete(null)}>
         <AlertDialogContent className="bg-anime-card border-anime-primary/20">
           <AlertDialogHeader>
