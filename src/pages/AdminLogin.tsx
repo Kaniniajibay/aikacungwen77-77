@@ -1,18 +1,45 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 const AdminLogin = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('kaniniajibay934@gmail.com');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      
+      if (data.session) {
+        // Check if user is admin
+        const { data: adminData, error: adminError } = await supabase
+          .from('admins')
+          .select('role')
+          .eq('email', data.session.user.email)
+          .maybeSingle();
+          
+        if (!adminError && adminData && adminData.role === 'admin') {
+          navigate('/admin/dashboard');
+          return;
+        }
+      }
+      
+      setIsInitializing(false);
+    };
+    
+    checkSession();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,14 +61,39 @@ const AdminLogin = () => {
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error);
+        
+        // If the error is about invalid credentials, we might need to sign up the user
+        if (error.message.includes("Invalid login credentials") && password === "Dragon123") {
+          // Try to sign up if this is the first time logging in
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+          });
+          
+          if (signUpError) {
+            throw signUpError;
+          }
+          
+          if (signUpData.user) {
+            toast({
+              title: "Account created",
+              description: "Please check your email for verification or try logging in again.",
+            });
+            return;
+          }
+        }
+        
+        throw error;
+      }
       
       // Check if user is an admin
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
         .select('role')
         .eq('email', email)
-        .single();
+        .maybeSingle();
         
       if (adminError || !adminData || adminData.role !== 'admin') {
         // Sign out if not an admin
@@ -66,6 +118,14 @@ const AdminLogin = () => {
       setIsLoading(false);
     }
   };
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-anime-background">
+        <Loader2 className="h-8 w-8 animate-spin text-anime-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-anime-background p-4">
