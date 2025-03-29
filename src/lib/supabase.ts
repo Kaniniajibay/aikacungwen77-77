@@ -1,9 +1,32 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Get environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Check if environment variables are properly set
+if (!supabaseUrl || !supabaseAnonKey) {
+  const missingVars = [];
+  if (!supabaseUrl) missingVars.push('VITE_SUPABASE_URL');
+  if (!supabaseAnonKey) missingVars.push('VITE_SUPABASE_ANON_KEY');
+  
+  console.error(`
+    ⚠️ Missing required environment variables: ${missingVars.join(', ')} ⚠️
+    
+    Please add these variables to your .env file in the project root:
+    
+    VITE_SUPABASE_URL=your_supabase_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    
+    You can get these values from your Supabase project dashboard.
+  `);
+
+  // Create a fallback client that will show an error message
+  throw new Error(`Missing required Supabase environment variables: ${missingVars.join(', ')}. Please check your console for more information.`);
+}
+
+// Create the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Database = {
