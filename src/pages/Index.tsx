@@ -162,8 +162,13 @@ const Index = () => {
             </div>
           ) : popularAnime.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {popularAnime.map((anime) => (
-                <AnimeCard key={anime.id} anime={anime} />
+              {popularAnime.slice(0, 10).map((anime, index) => (
+                <div key={anime.id} className="relative">
+                  <div className="absolute -top-3 -left-3 w-8 h-8 bg-anime-primary rounded-full flex items-center justify-center z-10 shadow-lg">
+                    <span className="text-white font-bold text-sm">#{index + 1}</span>
+                  </div>
+                  <AnimeCard anime={anime} />
+                </div>
               ))}
             </div>
           ) : (
