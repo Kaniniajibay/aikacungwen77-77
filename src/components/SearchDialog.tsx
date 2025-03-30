@@ -3,8 +3,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, type Anime } from '@/lib/supabase';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
+import { 
+  Command, 
+  CommandInput, 
+  CommandList, 
+  CommandEmpty, 
+  CommandGroup, 
+  CommandItem 
+} from '@/components/ui/command';
 import { Loader2 } from 'lucide-react';
+import { DialogTitle } from '@/components/ui/dialog';
 
 interface SearchDialogProps {
   open: boolean;
@@ -59,6 +67,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 max-w-2xl">
+        <DialogTitle className="sr-only">Search Anime</DialogTitle>
         <Command className="rounded-lg border-none">
           <CommandInput 
             placeholder="Search for anime..." 
