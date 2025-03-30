@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, type Anime } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 import NavBar from '@/components/NavBar';
 import AnimeCard from '@/components/AnimeCard';
 import { Card } from '@/components/ui/card';
@@ -12,6 +13,7 @@ const Index = () => {
   const [recentAnime, setRecentAnime] = useState<Anime[]>([]);
   const [popularAnime, setPopularAnime] = useState<Anime[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [firstEpisodeId, setFirstEpisodeId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,6 +45,20 @@ const Index = () => {
         setFeaturedAnime(featured);
         setRecentAnime(recentData as Anime[] || []);
         setPopularAnime(popularData as Anime[] || []);
+        
+        // Fetch the first episode for the featured anime to make Watch Now button work
+        if (featured) {
+          const { data: episodesData, error: episodesError } = await supabase
+            .from('episodes')
+            .select('id')
+            .eq('anime_id', featured.id)
+            .order('episode_number', { ascending: true })
+            .limit(1);
+            
+          if (!episodesError && episodesData && episodesData.length > 0) {
+            setFirstEpisodeId(episodesData[0].id);
+          }
+        }
       } catch (error) {
         console.error('Error fetching anime data:', error);
         toast({
@@ -86,9 +102,19 @@ const Index = () => {
                 <p className="text-sm md:text-base text-gray-300 mb-4 max-w-2xl line-clamp-2">
                   {featuredAnime.description}
                 </p>
-                <button className="bg-anime-primary hover:bg-anime-primary/90 text-white px-6 py-2 rounded-md font-medium transition-colors">
-                  Watch Now
-                </button>
+                {firstEpisodeId ? (
+                  <Link to={`/watch/${featuredAnime.id}/${firstEpisodeId}`}>
+                    <button className="bg-anime-primary hover:bg-anime-primary/90 text-white px-6 py-2 rounded-md font-medium transition-colors">
+                      Watch Now
+                    </button>
+                  </Link>
+                ) : (
+                  <Link to={`/anime/${featuredAnime.id}`}>
+                    <button className="bg-anime-primary hover:bg-anime-primary/90 text-white px-6 py-2 rounded-md font-medium transition-colors">
+                      View Details
+                    </button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

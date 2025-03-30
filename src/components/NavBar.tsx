@@ -20,9 +20,11 @@ const NavBar = () => {
           {/* Logo and Desktop Nav */}
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center">
-              <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-anime-primary to-anime-secondary">
-                AnimeStream
-              </span>
+              <img 
+                src="/lovable-uploads/d956edaf-7df3-49eb-99fa-e8a047d2e005.png" 
+                alt="Aikacuwen Logo" 
+                className="h-8 md:h-10" 
+              />
             </Link>
             
             <div className="hidden md:flex items-center space-x-4">
