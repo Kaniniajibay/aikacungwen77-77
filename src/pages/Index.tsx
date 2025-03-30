@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase, type Anime } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -56,7 +55,11 @@ const Index = () => {
             .limit(1);
             
           if (!episodesError && episodesData && episodesData.length > 0) {
-            setFirstEpisodeId(episodesData[0].id);
+            // Fix: Add proper type checking for the episode ID
+            const episodeId = episodesData[0]?.id;
+            if (typeof episodeId === 'string') {
+              setFirstEpisodeId(episodeId);
+            }
           }
         }
       } catch (error) {
