@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Index from "./pages/Index";
+import Browse from "./pages/Browse";
+import RecentlyAdded from "./pages/RecentlyAdded";
 import NotFound from "./pages/NotFound";
 import AnimeDetail from "./pages/AnimeDetail";
 import Watch from "./pages/Watch";
@@ -68,6 +70,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/browse" element={<Browse />} />
+      <Route path="/recently-added" element={<RecentlyAdded />} />
       <Route path="/anime/:id" element={<AnimeDetail />} />
       <Route path="/watch/:animeId/:episodeId" element={<Watch />} />
       <Route path="/admin" element={<AdminLogin />} />

@@ -4,9 +4,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Search, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SearchDialog from './SearchDialog';
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
   
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -36,7 +38,7 @@ const NavBar = () => {
           
           {/* Search and Mobile Menu Toggle */}
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="text-anime-text">
+            <Button variant="ghost" size="icon" className="text-anime-text" onClick={() => setIsSearchOpen(true)}>
               <Search className="h-5 w-5" />
             </Button>
             
@@ -64,6 +66,9 @@ const NavBar = () => {
           </div>
         </div>
       )}
+      
+      {/* Search Dialog */}
+      <SearchDialog open={isSearchOpen} onOpenChange={setIsSearchOpen} />
     </nav>
   );
 };
