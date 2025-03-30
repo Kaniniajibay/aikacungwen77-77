@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { supabase, type Anime } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -29,11 +30,14 @@ const Index = () => {
           
         if (recentError) throw recentError;
         
-        // Fetch popular anime (example query - in real app, this might be based on views)
+        // Fetch popular anime - ideally this would use a popularity metric
+        // Since we don't appear to have a views or popularity column in the anime table,
+        // we'll create a mock implementation based on release year (newer anime might be more popular)
+        // In a real app, you would have a separate table or column tracking views/popularity
         const { data: popularData, error: popularError } = await supabase
           .from('anime')
           .select('*')
-          .order('created_at', { ascending: false })
+          .order('release_year', { ascending: false }) // Use release year as a proxy for popularity
           .limit(12);
           
         if (popularError) throw popularError;
