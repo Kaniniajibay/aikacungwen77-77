@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/command';
 import { Loader2 } from 'lucide-react';
 import { DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface SearchDialogProps {
   open: boolean;
@@ -24,7 +25,24 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const [searchResults, setSearchResults] = useState<Anime[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
+  // Reset search state when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      // Focus the input when dialog opens
+      setTimeout(() => {
+        const input = document.querySelector('[cmdk-input]') as HTMLInputElement;
+        if (input) input.focus();
+      }, 100);
+    } else {
+      // Clear search when dialog closes
+      setSearchQuery('');
+      setSearchResults([]);
+    }
+  }, [open]);
+
+  // Handle search query changes
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (!searchQuery.trim()) {
@@ -45,6 +63,11 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         setSearchResults(data as Anime[] || []);
       } catch (error) {
         console.error('Search error:', error);
+        toast({
+          title: "Search failed",
+          description: "Failed to load search results. Please try again.",
+          variant: "destructive",
+        });
         setSearchResults([]);
       } finally {
         setIsLoading(false);
@@ -53,15 +76,21 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
 
     // Debounce search to avoid too many requests
     const timeoutId = setTimeout(() => {
-      fetchSearchResults();
+      if (open && searchQuery.trim()) {
+        fetchSearchResults();
+      }
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, open, toast]);
 
   const handleSelect = (animeId: string) => {
     navigate(`/anime/${animeId}`);
     onOpenChange(false);
+  };
+
+  const handleInputChange = (value: string) => {
+    setSearchQuery(value);
   };
 
   return (
@@ -72,8 +101,9 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
           <CommandInput 
             placeholder="Search for anime..." 
             value={searchQuery}
-            onValueChange={setSearchQuery}
+            onValueChange={handleInputChange}
             className="h-12"
+            autoFocus
           />
           <CommandList>
             {isLoading ? (
