@@ -2,7 +2,23 @@
 // This service worker allows the app to work offline
 // and provides faster loading times for returning visitors
 
-declare const self: ServiceWorkerGlobalScope;
+// Add type definitions for service worker
+interface ExtendableEvent extends Event {
+  waitUntil(fn: Promise<any>): void;
+}
+
+interface FetchEvent extends Event {
+  request: Request;
+  respondWith(response: Promise<Response> | Response): void;
+}
+
+declare const self: {
+  addEventListener(
+    type: string,
+    callback: (event: ExtendableEvent | FetchEvent) => void
+  ): void;
+  skipWaiting(): void;
+} & WindowOrWorkerGlobalScope;
 
 const CACHE_NAME = 'anime-streaming-cache-v1';
 const urlsToCache = [

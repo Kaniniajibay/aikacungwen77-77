@@ -15,8 +15,8 @@ const copyServiceWorker = () => {
           const content = fs.readFileSync('src/serviceWorker.ts', 'utf-8');
           // Replace TS-specific syntax with JS
           const jsContent = content
-            .replace(/declare const self: ServiceWorkerGlobalScope;/g, '')
-            .replace(/(event: \w+Event)/g, 'event')
+            .replace(/\/\/ Add type definitions for service worker[\s\S]*?WindowOrWorkerGlobalScope;\s*/g, '')
+            .replace(/(event: ExtendableEvent|event: FetchEvent)/g, 'event')
             .replace(/: \w+/g, '')
             .replace(/return undefined;/g, 'return;');
           fs.writeFileSync('dist/serviceWorker.js', jsContent);
