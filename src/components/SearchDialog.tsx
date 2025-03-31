@@ -27,21 +27,20 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Reset search state when dialog opens/closes
+  // Clear search state when dialog closes
   useEffect(() => {
-    if (open) {
-      // Input should be auto-focused due to the autoFocus prop
-      setSearchQuery(''); // Start with a fresh search when dialog opens
-    } else {
-      // Clear search when dialog closes
+    if (!open) {
       setSearchQuery('');
       setSearchResults([]);
     }
   }, [open]);
 
-  // Fetch search results whenever searchQuery changes
+  // Handle search as user types
   useEffect(() => {
-    if (!open || !searchQuery.trim()) {
+    if (!open) return;
+    
+    // Don't search if query is empty
+    if (!searchQuery.trim()) {
       setSearchResults([]);
       setIsLoading(false);
       return;
@@ -50,6 +49,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     const fetchSearchResults = async () => {
       setIsLoading(true);
       try {
+        console.log('Searching for:', searchQuery);
         const { data, error } = await supabase
           .from('anime')
           .select('*')
@@ -57,8 +57,13 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
           .order('title')
           .limit(10);
 
-        if (error) throw error;
-        setSearchResults(data as Anime[] || []);
+        if (error) {
+          console.error('Search error:', error);
+          throw error;
+        }
+        
+        console.log('Search results:', data);
+        setSearchResults(data || []);
       } catch (error) {
         console.error('Search error:', error);
         toast({
@@ -85,6 +90,11 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     onOpenChange(false);
   };
 
+  const handleSearchQueryChange = (value: string) => {
+    console.log('Search query changed:', value);
+    setSearchQuery(value);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 max-w-2xl">
@@ -96,7 +106,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
           <CommandInput 
             placeholder="Cari anime..." 
             value={searchQuery}
-            onValueChange={setSearchQuery}
+            onValueChange={handleSearchQueryChange}
             className="h-12"
             autoFocus
           />
