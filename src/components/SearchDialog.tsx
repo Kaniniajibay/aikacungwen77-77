@@ -63,7 +63,8 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         }
         
         console.log('Search results:', data);
-        setSearchResults(data || []);
+        // Properly cast the data to the Anime[] type
+        setSearchResults(data as unknown as Anime[]);
       } catch (error) {
         console.error('Search error:', error);
         toast({
