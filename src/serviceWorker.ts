@@ -2,6 +2,8 @@
 // This service worker allows the app to work offline
 // and provides faster loading times for returning visitors
 
+declare const self: ServiceWorkerGlobalScope;
+
 const CACHE_NAME = 'anime-streaming-cache-v1';
 const urlsToCache = [
   '/',
@@ -13,7 +15,7 @@ const urlsToCache = [
 ];
 
 // Install a service worker
-self.addEventListener('install', (event) => {
+self.addEventListener('install', (event: ExtendableEvent) => {
   // Perform install steps
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -25,7 +27,7 @@ self.addEventListener('install', (event) => {
 });
 
 // Cache and return requests
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', (event: FetchEvent) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -56,7 +58,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Update a service worker
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', (event: ExtendableEvent) => {
   const cacheAllowlist = [CACHE_NAME];
 
   event.waitUntil(
@@ -66,6 +68,7 @@ self.addEventListener('activate', (event) => {
           if (cacheAllowlist.indexOf(cacheName) === -1) {
             return caches.delete(cacheName);
           }
+          return undefined;
         })
       );
     })

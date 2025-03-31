@@ -13,9 +13,12 @@ const copyServiceWorker = () => {
       try {
         if (fs.existsSync('src/serviceWorker.ts')) {
           const content = fs.readFileSync('src/serviceWorker.ts', 'utf-8');
-          // Replace TS-specific syntax
-          const jsContent = content.replace('self.addEventListener', 'self.addEventListener as any')
-            .replace(/as any/g, '');
+          // Replace TS-specific syntax with JS
+          const jsContent = content
+            .replace(/declare const self: ServiceWorkerGlobalScope;/g, '')
+            .replace(/(event: \w+Event)/g, 'event')
+            .replace(/: \w+/g, '')
+            .replace(/return undefined;/g, 'return;');
           fs.writeFileSync('dist/serviceWorker.js', jsContent);
           console.log('Service worker copied to dist/');
         }
