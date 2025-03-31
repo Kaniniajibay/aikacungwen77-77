@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, type Anime } from '@/lib/supabase';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
 import { 
   Command, 
   CommandInput, 
@@ -30,11 +30,8 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   // Reset search state when dialog opens/closes
   useEffect(() => {
     if (open) {
-      // Focus the input when dialog opens
-      setTimeout(() => {
-        const input = document.querySelector('[cmdk-input]') as HTMLInputElement;
-        if (input) input.focus();
-      }, 100);
+      // Input should be auto-focused due to the autoFocus prop
+      setSearchQuery(''); // Start with a fresh search when dialog opens
     } else {
       // Clear search when dialog closes
       setSearchQuery('');
@@ -42,14 +39,15 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     }
   }, [open]);
 
-  // Handle search query changes
+  // Fetch search results whenever searchQuery changes
   useEffect(() => {
-    const fetchSearchResults = async () => {
-      if (!searchQuery.trim()) {
-        setSearchResults([]);
-        return;
-      }
+    if (!open || !searchQuery.trim()) {
+      setSearchResults([]);
+      setIsLoading(false);
+      return;
+    }
 
+    const fetchSearchResults = async () => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
@@ -64,8 +62,8 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
       } catch (error) {
         console.error('Search error:', error);
         toast({
-          title: "Search failed",
-          description: "Failed to load search results. Please try again.",
+          title: "Pencarian gagal",
+          description: "Gagal mendapatkan hasil pencarian. Silakan coba lagi.",
           variant: "destructive",
         });
         setSearchResults([]);
@@ -76,9 +74,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
 
     // Debounce search to avoid too many requests
     const timeoutId = setTimeout(() => {
-      if (open && searchQuery.trim()) {
-        fetchSearchResults();
-      }
+      fetchSearchResults();
     }, 300);
 
     return () => clearTimeout(timeoutId);
@@ -89,19 +85,18 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     onOpenChange(false);
   };
 
-  const handleInputChange = (value: string) => {
-    setSearchQuery(value);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 max-w-2xl">
-        <DialogTitle className="sr-only">Search Anime</DialogTitle>
+        <DialogTitle className="sr-only">Cari Anime</DialogTitle>
+        <DialogDescription className="sr-only">
+          Masukkan judul anime untuk mencari
+        </DialogDescription>
         <Command className="rounded-lg border-none">
           <CommandInput 
-            placeholder="Search for anime..." 
+            placeholder="Cari anime..." 
             value={searchQuery}
-            onValueChange={handleInputChange}
+            onValueChange={setSearchQuery}
             className="h-12"
             autoFocus
           />
@@ -112,7 +107,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
               </div>
             ) : searchQuery.length > 0 ? (
               <>
-                <CommandEmpty>No results found.</CommandEmpty>
+                <CommandEmpty>Tidak ada hasil ditemukan.</CommandEmpty>
                 <CommandGroup>
                   {searchResults.map((anime) => (
                     <CommandItem 
@@ -135,7 +130,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
               </>
             ) : (
               <div className="py-6 text-center text-sm text-anime-muted">
-                Start typing to search...
+                Ketik judul anime untuk mencari...
               </div>
             )}
           </CommandList>
