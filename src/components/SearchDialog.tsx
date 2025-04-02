@@ -20,8 +20,7 @@ interface SearchDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Define a simplified anime interface for search results
-interface AnimeSearchResult {
+interface SimpleAnimeResult {
   id: string;
   title: string;
   image_url: string;
@@ -30,7 +29,7 @@ interface AnimeSearchResult {
 
 const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<AnimeSearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<SimpleAnimeResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -72,19 +71,9 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         
         console.log('Search results:', data);
 
-        // Safely cast and transform the data to ensure it matches our interface
-        if (data) {
-          const validResults: AnimeSearchResult[] = data.map(item => ({
-            id: String(item.id),
-            title: String(item.title),
-            image_url: String(item.image_url),
-            release_year: Number(item.release_year)
-          }));
-          
-          setSearchResults(validResults);
-        } else {
-          setSearchResults([]);
-        }
+        // Type safe way to handle the data
+        setSearchResults(data as SimpleAnimeResult[] || []);
+        
       } catch (error) {
         console.error('Search error:', error);
         toast({
