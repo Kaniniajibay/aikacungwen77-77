@@ -63,7 +63,8 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         }
         
         console.log('Search results:', data);
-        setSearchResults(data as Anime[]);
+        // Using type assertion here, as we're confident the structure matches
+        setSearchResults(data || []);
       } catch (error) {
         console.error('Search error:', error);
         toast({
