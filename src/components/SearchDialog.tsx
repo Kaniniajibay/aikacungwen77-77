@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, type Anime } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
 import { 
   Command, 
@@ -20,9 +20,17 @@ interface SearchDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Define a simplified anime interface for search results
+interface AnimeSearchResult {
+  id: string;
+  title: string;
+  image_url: string;
+  release_year: number;
+}
+
 const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Anime[]>([]);
+  const [searchResults, setSearchResults] = useState<AnimeSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -52,7 +60,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         console.log('Searching for:', searchQuery);
         const { data, error } = await supabase
           .from('anime')
-          .select('*')
+          .select('id, title, image_url, release_year')
           .ilike('title', `%${searchQuery}%`)
           .order('title')
           .limit(10);
@@ -64,23 +72,8 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         
         console.log('Search results:', data);
 
-        // Properly type the data from Supabase to ensure it matches the Anime interface
-        if (data) {
-          // Explicitly validate that each result has the required Anime properties
-          const validResults = data.filter((item): item is Anime => 
-            typeof item.id === 'string' && 
-            typeof item.title === 'string' && 
-            typeof item.description === 'string' &&
-            typeof item.image_url === 'string' &&
-            Array.isArray(item.genres) &&
-            typeof item.release_year === 'number' &&
-            (item.status === 'ongoing' || item.status === 'completed')
-          );
-          
-          setSearchResults(validResults);
-        } else {
-          setSearchResults([]);
-        }
+        // Simply set the search results, we're only selecting the fields we need
+        setSearchResults(data || []);
       } catch (error) {
         console.error('Search error:', error);
         toast({
