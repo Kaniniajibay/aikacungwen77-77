@@ -72,8 +72,19 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         
         console.log('Search results:', data);
 
-        // Simply set the search results, we're only selecting the fields we need
-        setSearchResults(data || []);
+        // Safely cast and transform the data to ensure it matches our interface
+        if (data) {
+          const validResults: AnimeSearchResult[] = data.map(item => ({
+            id: String(item.id),
+            title: String(item.title),
+            image_url: String(item.image_url),
+            release_year: Number(item.release_year)
+          }));
+          
+          setSearchResults(validResults);
+        } else {
+          setSearchResults([]);
+        }
       } catch (error) {
         console.error('Search error:', error);
         toast({
