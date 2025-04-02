@@ -63,12 +63,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         }
         
         console.log('Search results:', data);
-        // Cast the data to Anime[] type to satisfy TypeScript
-        if (data) {
-          setSearchResults(data as unknown as Anime[]);
-        } else {
-          setSearchResults([]);
-        }
+        setSearchResults(data as Anime[]);
       } catch (error) {
         console.error('Search error:', error);
         toast({
@@ -96,7 +91,6 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   };
 
   const handleSearchQueryChange = (value: string) => {
-    console.log('Search query changed:', value);
     setSearchQuery(value);
   };
 
@@ -123,27 +117,25 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
             ) : searchQuery.length > 0 ? (
               <>
                 <CommandEmpty>Tidak ada hasil ditemukan.</CommandEmpty>
-                {searchResults.length > 0 && (
-                  <CommandGroup>
-                    {searchResults.map((anime) => (
-                      <CommandItem 
-                        key={anime.id}
-                        onSelect={() => handleSelect(anime.id)}
-                        className="flex items-center gap-2 p-2 cursor-pointer"
-                      >
-                        <img 
-                          src={anime.image_url} 
-                          alt={anime.title}
-                          className="h-10 w-10 rounded object-cover"
-                        />
-                        <div>
-                          <p className="font-medium">{anime.title}</p>
-                          <p className="text-xs text-anime-muted">{anime.release_year}</p>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
+                <CommandGroup>
+                  {searchResults.map((anime) => (
+                    <CommandItem 
+                      key={anime.id}
+                      onSelect={() => handleSelect(anime.id)}
+                      className="flex items-center gap-2 p-2 cursor-pointer"
+                    >
+                      <img 
+                        src={anime.image_url} 
+                        alt={anime.title}
+                        className="h-10 w-10 rounded object-cover"
+                      />
+                      <div>
+                        <p className="font-medium">{anime.title}</p>
+                        <p className="text-xs text-anime-muted">{anime.release_year}</p>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
               </>
             ) : (
               <div className="py-6 text-center text-sm text-anime-muted">
