@@ -71,8 +71,19 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         
         console.log('Search results:', data);
 
-        // Type safe way to handle the data
-        setSearchResults(data as SimpleAnimeResult[] || []);
+        if (data) {
+          // Explicitly convert the data to ensure types match
+          const typedResults: SimpleAnimeResult[] = data.map(item => ({
+            id: String(item.id),
+            title: String(item.title),
+            image_url: String(item.image_url),
+            release_year: Number(item.release_year)
+          }));
+          
+          setSearchResults(typedResults);
+        } else {
+          setSearchResults([]);
+        }
         
       } catch (error) {
         console.error('Search error:', error);
