@@ -63,8 +63,24 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         }
         
         console.log('Search results:', data);
-        // Using type assertion here, as we're confident the structure matches
-        setSearchResults(data || []);
+
+        // Properly type the data from Supabase to ensure it matches the Anime interface
+        if (data) {
+          // Explicitly validate that each result has the required Anime properties
+          const validResults = data.filter((item): item is Anime => 
+            typeof item.id === 'string' && 
+            typeof item.title === 'string' && 
+            typeof item.description === 'string' &&
+            typeof item.image_url === 'string' &&
+            Array.isArray(item.genres) &&
+            typeof item.release_year === 'number' &&
+            (item.status === 'ongoing' || item.status === 'completed')
+          );
+          
+          setSearchResults(validResults);
+        } else {
+          setSearchResults([]);
+        }
       } catch (error) {
         console.error('Search error:', error);
         toast({
