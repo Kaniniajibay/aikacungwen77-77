@@ -152,6 +152,10 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
                         src={anime.image_url} 
                         alt={anime.title}
                         className="h-10 w-10 rounded object-cover"
+                        onError={(e) => {
+                          // Fallback untuk gambar yang tidak dapat dimuat
+                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }}
                       />
                       <div>
                         <p className="font-medium">{anime.title}</p>
