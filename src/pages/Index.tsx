@@ -30,14 +30,11 @@ const Index = () => {
           
         if (recentError) throw recentError;
         
-        // Fetch popular anime - ideally this would use a popularity metric
-        // Since we don't appear to have a views or popularity column in the anime table,
-        // we'll create a mock implementation based on release year (newer anime might be more popular)
-        // In a real app, you would have a separate table or column tracking views/popularity
+        // Fetch popular anime
         const { data: popularData, error: popularError } = await supabase
           .from('anime')
           .select('*')
-          .order('release_year', { ascending: false }) // Use release year as a proxy for popularity
+          .order('release_year', { ascending: false })
           .limit(12);
           
         if (popularError) throw popularError;
@@ -49,7 +46,8 @@ const Index = () => {
         setRecentAnime(recentData as Anime[] || []);
         setPopularAnime(popularData as Anime[] || []);
         
-        // Update the anime cache for search functionality
+        // Immediately update the anime cache for search functionality
+        console.log('Updating anime cache from Index.tsx');
         updateAnimeCache(recentData as Anime[], popularData as Anime[]);
         
         // Fetch the first episode for the featured anime to make Watch Now button work

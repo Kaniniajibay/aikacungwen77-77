@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
@@ -26,28 +27,32 @@ interface SimpleAnimeResult {
   release_year: number;
 }
 
-// This is our global cache of anime data loaded from the homepage
+// Global cache for anime data
 let cachedAnimeResults: SimpleAnimeResult[] = [];
 
-// Function to update the cache - will be called from Index.tsx
+// Function to update the cache
 export const updateAnimeCache = (recentAnime: any[] = [], popularAnime: any[] = []) => {
-  // Combine recent and popular anime, removing duplicates by ID
-  const allAnime = [...recentAnime, ...popularAnime];
-  const uniqueAnimeMap = new Map();
-  
-  allAnime.forEach(anime => {
-    if (!uniqueAnimeMap.has(anime.id)) {
-      uniqueAnimeMap.set(anime.id, {
-        id: String(anime.id),
-        title: String(anime.title),
-        image_url: String(anime.image_url),
-        release_year: Number(anime.release_year)
-      });
-    }
-  });
-  
-  cachedAnimeResults = Array.from(uniqueAnimeMap.values());
-  console.log('Anime cache updated:', cachedAnimeResults.length, 'entries');
+  try {
+    // Combine recent and popular anime, removing duplicates by ID
+    const allAnime = [...recentAnime, ...popularAnime];
+    const uniqueAnimeMap = new Map();
+    
+    allAnime.forEach(anime => {
+      if (!uniqueAnimeMap.has(anime.id)) {
+        uniqueAnimeMap.set(anime.id, {
+          id: String(anime.id),
+          title: String(anime.title),
+          image_url: String(anime.image_url),
+          release_year: Number(anime.release_year)
+        });
+      }
+    });
+    
+    cachedAnimeResults = Array.from(uniqueAnimeMap.values());
+    console.log('Anime cache updated:', cachedAnimeResults.length, 'entries');
+  } catch (error) {
+    console.error('Error updating anime cache:', error);
+  }
 };
 
 const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
@@ -65,88 +70,110 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     }
   }, [open]);
 
-  // Debug cached anime results
+  // Directly fetch fresh anime data when dialog is opened
   useEffect(() => {
     if (open) {
-      console.log('Current cached anime:', cachedAnimeResults);
+      const fetchDirectAnimeData = async () => {
+        try {
+          setIsLoading(true);
+          // Direct database query for fresh data
+          const { data, error } = await supabase
+            .from('anime')
+            .select('id, title, image_url, release_year')
+            .limit(20);
+            
+          if (error) {
+            throw error;
+          }
+          
+          if (data && data.length > 0) {
+            // Update both the local cache and the global cache
+            cachedAnimeResults = data as SimpleAnimeResult[];
+            console.log('Direct fetch anime data successful:', data.length, 'entries');
+          }
+        } catch (error) {
+          console.error('Error fetching anime data directly:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchDirectAnimeData();
     }
   }, [open]);
 
-  // Handle search as user types
+  // Search functionality
   useEffect(() => {
-    if (!open) return;
-    
-    // Don't search if query is empty
-    if (!searchQuery.trim()) {
+    if (!open || !searchQuery.trim()) {
       setSearchResults([]);
-      setIsLoading(false);
       return;
     }
-
+    
+    setIsLoading(true);
+    
     const performSearch = () => {
-      setIsLoading(true);
       try {
-        console.log('Searching for:', searchQuery);
+        const query = searchQuery.toLowerCase();
+        console.log('Searching for:', query);
         
-        // Filter the cached anime results based on the search query
-        const filteredResults = cachedAnimeResults.filter(anime => 
-          anime.title.toLowerCase().includes(searchQuery.toLowerCase())
-        ).slice(0, 10); // Limit to 10 results
+        // First try to search from the cache
+        const results = cachedAnimeResults
+          .filter(anime => anime.title.toLowerCase().includes(query))
+          .slice(0, 10); // Limit to 10 results
         
-        console.log('Search results:', filteredResults);
-        setSearchResults(filteredResults);
+        console.log('Search results:', results);
+        setSearchResults(results);
+        
+        // If cache is empty or no results found, try direct database search
+        if (results.length === 0) {
+          searchFromDatabase(query);
+        }
       } catch (error) {
         console.error('Search error:', error);
-        toast({
-          title: "Pencarian gagal",
-          description: "Gagal mendapatkan hasil pencarian. Silakan coba lagi.",
-          variant: "destructive",
-        });
-        setSearchResults([]);
       } finally {
         setIsLoading(false);
       }
     };
-
-    // Debounce search to avoid too many operations
-    const timeoutId = setTimeout(() => {
-      performSearch();
-    }, 300);
-
+    
+    // Debounce search
+    const timeoutId = setTimeout(performSearch, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, open, toast]);
+  }, [searchQuery, open]);
+  
+  // Function to search directly from the database
+  const searchFromDatabase = async (query: string) => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('anime')
+        .select('id, title, image_url, release_year')
+        .ilike('title', `%${query}%`)
+        .limit(10);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.length > 0) {
+        setSearchResults(data as SimpleAnimeResult[]);
+        console.log('Database search results:', data);
+      }
+    } catch (error) {
+      console.error('Database search error:', error);
+      toast({
+        title: "Pencarian gagal",
+        description: "Gagal mendapatkan hasil pencarian. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSelect = (animeId: string) => {
     navigate(`/anime/${animeId}`);
     onOpenChange(false);
   };
-
-  const handleSearchQueryChange = (value: string) => {
-    setSearchQuery(value);
-  };
-
-  // Force update cache from Index component when SearchDialog is opened
-  useEffect(() => {
-    if (open && cachedAnimeResults.length === 0) {
-      // Try to get anime data from page if cache is empty
-      const fetchHomePageAnime = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('anime')
-            .select('*')
-            .limit(20);
-            
-          if (!error && data) {
-            updateAnimeCache(data, []);
-          }
-        } catch (e) {
-          console.error('Failed to fetch fallback anime data:', e);
-        }
-      };
-      
-      fetchHomePageAnime();
-    }
-  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,7 +186,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
           <CommandInput 
             placeholder="Cari anime..." 
             value={searchQuery}
-            onValueChange={handleSearchQueryChange}
+            onValueChange={setSearchQuery}
             className="h-12"
             autoFocus
           />
@@ -178,17 +205,18 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
                         onSelect={() => handleSelect(anime.id)}
                         className="flex items-center gap-2 p-2 cursor-pointer"
                       >
-                        <img 
-                          src={anime.image_url} 
-                          alt={anime.title}
-                          className="h-10 w-10 rounded object-cover"
-                          onError={(e) => {
-                            // Fallback untuk gambar yang tidak dapat dimuat
-                            (e.target as HTMLImageElement).src = '/placeholder.svg';
-                          }}
-                        />
-                        <div>
-                          <p className="font-medium">{anime.title}</p>
+                        <div className="h-10 w-10 rounded overflow-hidden flex-shrink-0">
+                          <img 
+                            src={anime.image_url} 
+                            alt={anime.title}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                          />
+                        </div>
+                        <div className="flex-grow">
+                          <p className="font-medium truncate">{anime.title}</p>
                           <p className="text-xs text-anime-muted">{anime.release_year}</p>
                         </div>
                       </CommandItem>
