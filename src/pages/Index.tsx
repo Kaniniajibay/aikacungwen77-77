@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase, type Anime } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +6,7 @@ import NavBar from '@/components/NavBar';
 import AnimeCard from '@/components/AnimeCard';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { updateAnimeCache } from '@/components/SearchDialog';
 
 const Index = () => {
   const [featuredAnime, setFeaturedAnime] = useState<Anime | null>(null);
@@ -48,6 +48,9 @@ const Index = () => {
         setFeaturedAnime(featured);
         setRecentAnime(recentData as Anime[] || []);
         setPopularAnime(popularData as Anime[] || []);
+        
+        // Update the anime cache for search functionality
+        updateAnimeCache(recentData as Anime[], popularData as Anime[]);
         
         // Fetch the first episode for the featured anime to make Watch Now button work
         if (featured) {

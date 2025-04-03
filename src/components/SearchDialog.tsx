@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
 import { 
   Command, 
@@ -26,6 +25,30 @@ interface SimpleAnimeResult {
   image_url: string;
   release_year: number;
 }
+
+// This is our global cache of anime data loaded from the homepage
+let cachedAnimeResults: SimpleAnimeResult[] = [];
+
+// Function to update the cache - will be called from Index.tsx
+export const updateAnimeCache = (recentAnime: any[] = [], popularAnime: any[] = []) => {
+  // Combine recent and popular anime, removing duplicates by ID
+  const allAnime = [...recentAnime, ...popularAnime];
+  const uniqueAnimeMap = new Map();
+  
+  allAnime.forEach(anime => {
+    if (!uniqueAnimeMap.has(anime.id)) {
+      uniqueAnimeMap.set(anime.id, {
+        id: String(anime.id),
+        title: String(anime.title),
+        image_url: String(anime.image_url),
+        release_year: Number(anime.release_year)
+      });
+    }
+  });
+  
+  cachedAnimeResults = Array.from(uniqueAnimeMap.values());
+  console.log('Anime cache updated:', cachedAnimeResults.length, 'entries');
+};
 
 const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,38 +76,18 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
       return;
     }
 
-    const fetchSearchResults = async () => {
+    const performSearch = () => {
       setIsLoading(true);
       try {
         console.log('Searching for:', searchQuery);
-        const { data, error } = await supabase
-          .from('anime')
-          .select('id, title, image_url, release_year')
-          .ilike('title', `%${searchQuery}%`)
-          .order('title')
-          .limit(10);
-
-        if (error) {
-          console.error('Search error:', error);
-          throw error;
-        }
         
-        console.log('Search results:', data);
-
-        if (data) {
-          // Explicitly convert the data to ensure types match
-          const typedResults: SimpleAnimeResult[] = data.map(item => ({
-            id: String(item.id),
-            title: String(item.title),
-            image_url: String(item.image_url),
-            release_year: Number(item.release_year)
-          }));
-          
-          setSearchResults(typedResults);
-        } else {
-          setSearchResults([]);
-        }
+        // Filter the cached anime results based on the search query
+        const filteredResults = cachedAnimeResults.filter(anime => 
+          anime.title.toLowerCase().includes(searchQuery.toLowerCase())
+        ).slice(0, 10); // Limit to 10 results like before
         
+        console.log('Search results:', filteredResults);
+        setSearchResults(filteredResults);
       } catch (error) {
         console.error('Search error:', error);
         toast({
@@ -98,9 +101,9 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
       }
     };
 
-    // Debounce search to avoid too many requests
+    // Debounce search to avoid too many operations
     const timeoutId = setTimeout(() => {
-      fetchSearchResults();
+      performSearch();
     }, 300);
 
     return () => clearTimeout(timeoutId);
