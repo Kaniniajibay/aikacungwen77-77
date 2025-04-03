@@ -47,8 +47,14 @@ const Index = () => {
         setPopularAnime(popularData as Anime[] || []);
         
         // Immediately update the anime cache for search functionality
-        console.log('Updating anime cache from Index.tsx');
-        updateAnimeCache(recentData as Anime[], popularData as Anime[]);
+        // Make sure the type conversion is explicitly handled
+        if (recentData && popularData) {
+          console.log('Updating anime cache from Index.tsx');
+          updateAnimeCache(
+            recentData as Anime[], 
+            popularData as Anime[]
+          );
+        }
         
         // Fetch the first episode for the featured anime to make Watch Now button work
         if (featured) {
