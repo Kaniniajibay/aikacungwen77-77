@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
@@ -10,9 +9,10 @@ import {
   CommandGroup, 
   CommandItem 
 } from '@/components/ui/command';
-import { Loader2 } from 'lucide-react';
+import { Loader2, SearchX } from 'lucide-react';
 import { DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface SearchDialogProps {
   open: boolean;
@@ -65,6 +65,13 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     }
   }, [open]);
 
+  // Debug cached anime results
+  useEffect(() => {
+    if (open) {
+      console.log('Current cached anime:', cachedAnimeResults);
+    }
+  }, [open]);
+
   // Handle search as user types
   useEffect(() => {
     if (!open) return;
@@ -84,7 +91,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         // Filter the cached anime results based on the search query
         const filteredResults = cachedAnimeResults.filter(anime => 
           anime.title.toLowerCase().includes(searchQuery.toLowerCase())
-        ).slice(0, 10); // Limit to 10 results like before
+        ).slice(0, 10); // Limit to 10 results
         
         console.log('Search results:', filteredResults);
         setSearchResults(filteredResults);
@@ -118,6 +125,29 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     setSearchQuery(value);
   };
 
+  // Force update cache from Index component when SearchDialog is opened
+  useEffect(() => {
+    if (open && cachedAnimeResults.length === 0) {
+      // Try to get anime data from page if cache is empty
+      const fetchHomePageAnime = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('anime')
+            .select('*')
+            .limit(20);
+            
+          if (!error && data) {
+            updateAnimeCache(data, []);
+          }
+        } catch (e) {
+          console.error('Failed to fetch fallback anime data:', e);
+        }
+      };
+      
+      fetchHomePageAnime();
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 max-w-2xl overflow-hidden">
@@ -140,30 +170,36 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
               </div>
             ) : searchQuery.length > 0 ? (
               <>
-                <CommandEmpty>Tidak ada hasil ditemukan.</CommandEmpty>
-                <CommandGroup>
-                  {searchResults.map((anime) => (
-                    <CommandItem 
-                      key={anime.id}
-                      onSelect={() => handleSelect(anime.id)}
-                      className="flex items-center gap-2 p-2 cursor-pointer"
-                    >
-                      <img 
-                        src={anime.image_url} 
-                        alt={anime.title}
-                        className="h-10 w-10 rounded object-cover"
-                        onError={(e) => {
-                          // Fallback untuk gambar yang tidak dapat dimuat
-                          (e.target as HTMLImageElement).src = '/placeholder.svg';
-                        }}
-                      />
-                      <div>
-                        <p className="font-medium">{anime.title}</p>
-                        <p className="text-xs text-anime-muted">{anime.release_year}</p>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+                {searchResults.length > 0 ? (
+                  <CommandGroup>
+                    {searchResults.map((anime) => (
+                      <CommandItem 
+                        key={anime.id}
+                        onSelect={() => handleSelect(anime.id)}
+                        className="flex items-center gap-2 p-2 cursor-pointer"
+                      >
+                        <img 
+                          src={anime.image_url} 
+                          alt={anime.title}
+                          className="h-10 w-10 rounded object-cover"
+                          onError={(e) => {
+                            // Fallback untuk gambar yang tidak dapat dimuat
+                            (e.target as HTMLImageElement).src = '/placeholder.svg';
+                          }}
+                        />
+                        <div>
+                          <p className="font-medium">{anime.title}</p>
+                          <p className="text-xs text-anime-muted">{anime.release_year}</p>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                ) : (
+                  <CommandEmpty className="py-6 flex flex-col items-center justify-center">
+                    <SearchX className="h-10 w-10 text-anime-muted mb-2" />
+                    <p className="text-anime-muted">Tidak ada hasil ditemukan.</p>
+                  </CommandEmpty>
+                )}
               </>
             ) : (
               <div className="py-6 text-center text-sm text-anime-muted">
