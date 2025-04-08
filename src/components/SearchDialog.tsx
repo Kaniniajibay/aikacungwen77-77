@@ -14,6 +14,7 @@ import { Loader2, SearchX } from 'lucide-react';
 import { DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { Anime } from '@/lib/supabase'; // Import the Anime type
 
 interface SearchDialogProps {
   open: boolean;
@@ -27,17 +28,50 @@ interface SimpleAnimeResult {
   release_year: number;
 }
 
+// Create a cache to store anime data
+let animeCache: SimpleAnimeResult[] = [];
+
+// Export the updateAnimeCache function that Index.tsx is trying to import
+export const updateAnimeCache = (
+  recentAnime: Anime[] = [], 
+  popularAnime: Anime[] = []
+) => {
+  console.log('Updating anime cache with data from Index.tsx');
+  
+  // Convert Anime[] to SimpleAnimeResult[]
+  const convertedAnime: SimpleAnimeResult[] = [...recentAnime, ...popularAnime].map(anime => ({
+    id: anime.id,
+    title: anime.title,
+    image_url: anime.image_url,
+    release_year: anime.release_year
+  }));
+  
+  // Remove duplicates by ID
+  const uniqueIds = new Set();
+  animeCache = [
+    ...animeCache,
+    ...convertedAnime.filter(anime => {
+      if (!uniqueIds.has(anime.id)) {
+        uniqueIds.add(anime.id);
+        return true;
+      }
+      return false;
+    })
+  ];
+  
+  console.log('Anime cache updated, total entries:', animeCache.length);
+};
+
 const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SimpleAnimeResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [allAnime, setAllAnime] = useState<SimpleAnimeResult[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch all anime data when dialog opens
+  // Fetch all anime data when dialog opens if cache is empty
   useEffect(() => {
-    if (open) {
+    if (open && animeCache.length === 0) {
       fetchAllAnime();
     }
   }, [open]);
@@ -66,7 +100,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
       
       if (data && data.length > 0) {
         console.log('Anime data fetched successfully:', data.length, 'entries');
-        setAllAnime(data as SimpleAnimeResult[]);
+        animeCache = data as SimpleAnimeResult[];
       } else {
         console.log('No anime data returned from Supabase');
       }
@@ -92,18 +126,18 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     const query = searchTerm.toLowerCase();
     console.log('Searching for:', query);
     
-    // Filter anime based on search term
-    if (allAnime.length > 0) {
-      const filtered = allAnime.filter(anime => 
+    // Filter anime based on search term from cache
+    if (animeCache.length > 0) {
+      const filtered = animeCache.filter(anime => 
         anime.title.toLowerCase().includes(query)
       );
       console.log('Search results:', filtered.length);
       setSearchResults(filtered);
     } else {
-      // If allAnime is empty, perform a direct database search
+      // If anime cache is empty, perform a direct database search
       performDatabaseSearch(query);
     }
-  }, [searchTerm, allAnime]);
+  }, [searchTerm]);
 
   const performDatabaseSearch = async (query: string) => {
     try {
