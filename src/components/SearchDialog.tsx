@@ -69,10 +69,10 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch all anime data when dialog opens if cache is empty
+  // Fetch all anime titles when dialog opens
   useEffect(() => {
-    if (open && animeCache.length === 0) {
-      fetchAllAnime();
+    if (open) {
+      fetchAnimeTitles();
     }
   }, [open]);
 
@@ -84,10 +84,10 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     }
   }, [open]);
 
-  const fetchAllAnime = async () => {
+  const fetchAnimeTitles = async () => {
     try {
       setIsLoading(true);
-      console.log('Fetching anime data from Supabase...');
+      console.log('Fetching anime titles from Supabase...');
       
       const { data, error } = await supabase
         .from('anime')
@@ -99,16 +99,25 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
       }
       
       if (data && data.length > 0) {
-        console.log('Anime data fetched successfully:', data.length, 'entries');
+        console.log('Anime titles fetched successfully:', data.length, 'entries');
         animeCache = data as SimpleAnimeResult[];
+        
+        // If search term is already entered, filter results immediately
+        if (searchTerm.trim() !== '') {
+          const query = searchTerm.toLowerCase();
+          const filtered = animeCache.filter(anime => 
+            anime.title.toLowerCase().includes(query)
+          );
+          setSearchResults(filtered);
+        }
       } else {
         console.log('No anime data returned from Supabase');
       }
     } catch (error) {
-      console.error('Error fetching anime data:', error);
+      console.error('Error fetching anime titles:', error);
       toast({
         title: "Error",
-        description: "Gagal mengambil data anime",
+        description: "Gagal mengambil data judul anime",
         variant: "destructive",
       });
     } finally {
@@ -116,7 +125,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     }
   };
 
-  // Search functionality
+  // Search functionality - directly search from Supabase if needed
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setSearchResults([]);
