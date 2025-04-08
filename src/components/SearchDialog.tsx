@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
@@ -51,7 +50,7 @@ export const updateAnimeCache = (recentAnime: any[] = [], popularAnime: any[] = 
 };
 
 const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SimpleAnimeResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -60,83 +59,121 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   // Clear search state when dialog closes
   useEffect(() => {
     if (!open) {
-      setSearchQuery('');
+      setSearchTerm('');
       setSearchResults([]);
     }
   }, [open]);
 
-  // Fetch initial data when dialog opens
+  // Load initial data when dialog opens
   useEffect(() => {
     if (open) {
-      const fetchAnimeData = async () => {
+      const fetchInitialData = async () => {
         try {
           setIsLoading(true);
+          
+          // If we already have cache, use it
+          if (cachedAnimeResults.length > 0) {
+            console.log('Using cached anime results:', cachedAnimeResults.length);
+            setIsLoading(false);
+            return;
+          }
+          
+          // Otherwise fetch fresh data
           const { data, error } = await supabase
             .from('anime')
             .select('id, title, image_url, release_year')
             .limit(20);
-          
+            
           if (error) throw error;
           
           if (data) {
-            // Update cache
             const formattedData = data.map(anime => ({
               id: String(anime.id),
               title: String(anime.title),
               image_url: String(anime.image_url),
               release_year: Number(anime.release_year)
             }));
+            
             cachedAnimeResults = formattedData;
+            console.log('Initial anime data loaded:', formattedData.length);
           }
         } catch (error) {
           console.error('Error fetching initial anime data:', error);
+          toast({
+            title: "Error",
+            description: "Gagal mengambil data anime awal",
+            variant: "destructive",
+          });
         } finally {
           setIsLoading(false);
         }
       };
       
-      fetchAnimeData();
+      fetchInitialData();
     }
-  }, [open]);
+  }, [open, toast]);
 
-  // Simple search function that runs on EVERY keystroke
+  // Handle search input changes
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    
     const performSearch = async () => {
+      // If search term is empty, clear results
+      if (!searchTerm.trim()) {
+        setSearchResults([]);
+        return;
+      }
+      
       setIsLoading(true);
       try {
-        const query = searchQuery.toLowerCase();
+        const query = searchTerm.toLowerCase();
+        console.log('Searching for:', query);
         
-        // First try the cache
-        let results = cachedAnimeResults.filter(anime => 
-          anime.title.toLowerCase().includes(query)
-        );
-        
-        // If no results in cache or cache is empty, query the database directly
-        if (results.length === 0) {
-          const { data, error } = await supabase
-            .from('anime')
-            .select('id, title, image_url, release_year')
-            .ilike('title', `%${query}%`)
-            .limit(10);
+        // First check cache
+        if (cachedAnimeResults.length > 0) {
+          const results = cachedAnimeResults.filter(anime => 
+            anime.title.toLowerCase().includes(query)
+          );
           
-          if (error) throw error;
+          console.log('Cache search results:', results.length);
           
-          if (data) {
-            results = data.map(anime => ({
-              id: String(anime.id),
-              title: String(anime.title),
-              image_url: String(anime.image_url),
-              release_year: Number(anime.release_year)
-            }));
+          // If we found results in cache, use them
+          if (results.length > 0) {
+            setSearchResults(results);
+            setIsLoading(false);
+            return;
           }
         }
         
-        setSearchResults(results);
+        // If no results in cache, query the database
+        console.log('Querying database...');
+        const { data, error } = await supabase
+          .from('anime')
+          .select('id, title, image_url, release_year')
+          .ilike('title', `%${query}%`)
+          .limit(10);
+        
+        if (error) throw error;
+        
+        if (data) {
+          const results = data.map(anime => ({
+            id: String(anime.id),
+            title: String(anime.title),
+            image_url: String(anime.image_url),
+            release_year: Number(anime.release_year)
+          }));
+          
+          setSearchResults(results);
+          console.log('Database search results:', results.length);
+          
+          // Add new results to cache
+          const newCacheEntries = results.filter(
+            result => !cachedAnimeResults.some(cached => cached.id === result.id)
+          );
+          
+          if (newCacheEntries.length > 0) {
+            cachedAnimeResults = [...cachedAnimeResults, ...newCacheEntries];
+            console.log('Added new entries to cache:', newCacheEntries.length);
+          }
+        }
       } catch (error) {
         console.error('Search error:', error);
         toast({
@@ -148,10 +185,9 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         setIsLoading(false);
       }
     };
-    
-    // Apply the search immediately without debounce
+
     performSearch();
-  }, [searchQuery, toast]);
+  }, [searchTerm, toast]);
 
   const handleSelect = (animeId: string) => {
     navigate(`/anime/${animeId}`);
@@ -168,8 +204,8 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
         <Command className="rounded-lg border-none">
           <CommandInput 
             placeholder="Cari anime..." 
-            value={searchQuery}
-            onValueChange={setSearchQuery}
+            value={searchTerm}
+            onValueChange={setSearchTerm}
             className="h-12"
             autoFocus
           />
@@ -178,7 +214,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-5 w-5 animate-spin text-anime-muted" />
               </div>
-            ) : searchQuery.length > 0 ? (
+            ) : searchTerm.trim() !== "" ? (
               <>
                 {searchResults.length > 0 ? (
                   <CommandGroup>
