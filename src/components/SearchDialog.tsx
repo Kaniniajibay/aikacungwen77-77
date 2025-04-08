@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
@@ -26,29 +27,6 @@ interface SimpleAnimeResult {
   release_year: number;
 }
 
-// Global cache for anime data
-let cachedAnimeResults: SimpleAnimeResult[] = [];
-
-// Function to update the cache
-export const updateAnimeCache = (recentAnime: any[] = [], popularAnime: any[] = []) => {
-  const allAnime = [...recentAnime, ...popularAnime];
-  const uniqueAnimeMap = new Map();
-  
-  allAnime.forEach(anime => {
-    if (!uniqueAnimeMap.has(anime.id)) {
-      uniqueAnimeMap.set(anime.id, {
-        id: String(anime.id),
-        title: String(anime.title),
-        image_url: String(anime.image_url),
-        release_year: Number(anime.release_year)
-      });
-    }
-  });
-  
-  cachedAnimeResults = Array.from(uniqueAnimeMap.values());
-  console.log('Anime cache updated:', cachedAnimeResults.length, 'entries');
-};
-
 const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SimpleAnimeResult[]>([]);
@@ -57,58 +35,14 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch all anime when dialog opens
+  // Fetch all anime data when dialog opens
   useEffect(() => {
     if (open) {
-      const fetchAnimeData = async () => {
-        try {
-          setIsLoading(true);
-          
-          // If we have cache, use it for initial data
-          if (cachedAnimeResults.length > 0) {
-            setAllAnime(cachedAnimeResults);
-            console.log('Using cached anime data:', cachedAnimeResults.length);
-            setIsLoading(false);
-            return;
-          }
-          
-          // Otherwise fetch fresh data
-          const { data, error } = await supabase
-            .from('anime')
-            .select('id, title, image_url, release_year')
-            .limit(50);
-            
-          if (error) throw error;
-          
-          if (data && data.length > 0) {
-            const formattedData = data.map(anime => ({
-              id: String(anime.id),
-              title: String(anime.title),
-              image_url: String(anime.image_url),
-              release_year: Number(anime.release_year)
-            }));
-            
-            setAllAnime(formattedData);
-            cachedAnimeResults = formattedData;
-            console.log('Initial anime data loaded:', formattedData.length);
-          }
-        } catch (error) {
-          console.error('Error fetching anime data:', error);
-          toast({
-            title: "Error",
-            description: "Gagal mengambil data anime",
-            variant: "destructive",
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      fetchAnimeData();
+      fetchAllAnime();
     }
-  }, [open, toast]);
+  }, [open]);
 
-  // Reset search state when dialog closes
+  // Reset search when dialog closes
   useEffect(() => {
     if (!open) {
       setSearchTerm('');
@@ -116,7 +50,39 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     }
   }, [open]);
 
-  // Filter anime based on search term
+  const fetchAllAnime = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Fetching anime data from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('anime')
+        .select('id, title, image_url, release_year')
+        .limit(100);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.length > 0) {
+        console.log('Anime data fetched successfully:', data.length, 'entries');
+        setAllAnime(data as SimpleAnimeResult[]);
+      } else {
+        console.log('No anime data returned from Supabase');
+      }
+    } catch (error) {
+      console.error('Error fetching anime data:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengambil data anime",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Search functionality
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setSearchResults([]);
@@ -126,60 +92,47 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
     const query = searchTerm.toLowerCase();
     console.log('Searching for:', query);
     
+    // Filter anime based on search term
     if (allAnime.length > 0) {
       const filtered = allAnime.filter(anime => 
         anime.title.toLowerCase().includes(query)
       );
       console.log('Search results:', filtered.length);
       setSearchResults(filtered);
-    } else if (cachedAnimeResults.length > 0) {
-      // Try cache as fallback
-      const filtered = cachedAnimeResults.filter(anime => 
-        anime.title.toLowerCase().includes(query)
-      );
-      console.log('Cache search results:', filtered.length);
-      setSearchResults(filtered);
     } else {
-      // If nothing in cache or all anime, do a direct DB search
-      const performDatabaseSearch = async () => {
-        try {
-          setIsLoading(true);
-          console.log('Performing direct database search for:', query);
-          
-          const { data, error } = await supabase
-            .from('anime')
-            .select('id, title, image_url, release_year')
-            .ilike('title', `%${query}%`)
-            .limit(20);
-          
-          if (error) throw error;
-          
-          if (data) {
-            const results = data.map(anime => ({
-              id: String(anime.id),
-              title: String(anime.title),
-              image_url: String(anime.image_url),
-              release_year: Number(anime.release_year)
-            }));
-            
-            setSearchResults(results);
-            console.log('Database search results:', results.length);
-          }
-        } catch (error) {
-          console.error('Search error:', error);
-          toast({
-            title: "Pencarian gagal",
-            description: "Gagal mendapatkan hasil pencarian",
-            variant: "destructive",
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      performDatabaseSearch();
+      // If allAnime is empty, perform a direct database search
+      performDatabaseSearch(query);
     }
-  }, [searchTerm, allAnime, toast]);
+  }, [searchTerm, allAnime]);
+
+  const performDatabaseSearch = async (query: string) => {
+    try {
+      setIsLoading(true);
+      console.log('Performing direct database search for:', query);
+      
+      const { data, error } = await supabase
+        .from('anime')
+        .select('id, title, image_url, release_year')
+        .ilike('title', `%${query}%`)
+        .limit(20);
+      
+      if (error) throw error;
+      
+      if (data) {
+        console.log('Database search results:', data.length);
+        setSearchResults(data as SimpleAnimeResult[]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Pencarian gagal",
+        description: "Gagal mendapatkan hasil pencarian",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSelect = (animeId: string) => {
     navigate(`/anime/${animeId}`);
