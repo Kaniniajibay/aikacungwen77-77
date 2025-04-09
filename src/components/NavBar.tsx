@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Search, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SearchDialog from './SearchDialog';
 
@@ -38,9 +38,8 @@ const NavBar = () => {
           
           {/* Search and Mobile Menu Toggle */}
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="text-anime-text" onClick={() => setIsSearchOpen(true)}>
-              <Search className="h-5 w-5" />
-            </Button>
+            {/* Menggunakan SearchDialog sebagai tombol pencarian */}
+            <SearchDialog />
             
             <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMenu}>
               {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -67,8 +66,7 @@ const NavBar = () => {
         </div>
       )}
       
-      {/* Search Dialog */}
-      <SearchDialog open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+      {/* Menghapus SearchDialog di sini karena sudah ada di navbar */}
     </nav>
   );
 };
