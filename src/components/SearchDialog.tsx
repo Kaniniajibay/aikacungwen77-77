@@ -1,51 +1,75 @@
 
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { Command, CommandInput, CommandList } from '@/components/ui/command';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { SearchIcon, X } from 'lucide-react';
 import SearchResults from './SearchResults';
-import { useAnimeSearch, updateAnimeCache } from '@/hooks/useAnimeSearch';
+import { useAnimeSearch } from '../hooks/useAnimeSearch';
 
-interface SearchDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+const SearchDialog = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const { searchAnime, results, isLoading } = useAnimeSearch();
 
-// Re-export updateAnimeCache for Index.tsx to use
-export { updateAnimeCache };
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    if (value.length >= 2) {
+      searchAnime(value);
+    }
+  };
 
-const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
-  const navigate = useNavigate();
-  const { searchTerm, setSearchTerm, searchResults, isLoading } = useAnimeSearch(open);
-
-  const handleSelect = (animeId: string) => {
-    navigate(`/anime/${animeId}`);
-    onOpenChange(false);
+  const clearSearch = () => {
+    setQuery('');
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 max-w-2xl overflow-hidden">
-        <DialogTitle className="sr-only">Cari Anime</DialogTitle>
-        <DialogDescription className="sr-only">
-          Masukkan judul anime untuk mencari
-        </DialogDescription>
-        <Command className="rounded-lg border-none">
-          <CommandInput 
-            placeholder="Cari anime..." 
-            value={searchTerm}
-            onValueChange={setSearchTerm}
-            className="h-12"
-            autoFocus
-          />
-          <CommandList className="max-h-[300px] overflow-y-auto">
-            <SearchResults 
-              isLoading={isLoading}
-              searchTerm={searchTerm}
-              searchResults={searchResults}
-              onSelectItem={handleSelect}
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="flex items-center gap-2 bg-background/80 backdrop-blur-md border-muted-foreground/20 hover:bg-background/90">
+          <SearchIcon size={16} />
+          <span className="hidden sm:inline">Cari Anime...</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden">
+        <DialogHeader className="p-4 border-b">
+          <DialogTitle className="text-lg font-medium flex items-center gap-2">
+            <SearchIcon size={20} />
+            Pencarian Anime
+          </DialogTitle>
+        </DialogHeader>
+        <div className="p-4 space-y-4">
+          <div className="relative">
+            <Input
+              placeholder="Masukkan judul anime..."
+              className="pr-10 h-12 text-base"
+              value={query}
+              onChange={handleSearch}
+              autoFocus
             />
-          </CommandList>
-        </Command>
+            {query && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+          
+          {query.length >= 2 && (
+            <div className="max-h-[60vh] overflow-y-auto">
+              <SearchResults results={results} isLoading={isLoading} closeDialog={() => setIsOpen(false)} />
+            </div>
+          )}
+          
+          {query.length > 0 && query.length < 2 && (
+            <p className="text-sm text-muted-foreground text-center py-2">
+              Ketik minimal 2 karakter untuk memulai pencarian
+            </p>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

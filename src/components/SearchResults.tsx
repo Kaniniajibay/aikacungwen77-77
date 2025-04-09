@@ -1,77 +1,82 @@
 
-import { Loader2, SearchX } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  CommandEmpty, 
-  CommandGroup, 
-  CommandItem, 
-  CommandList 
-} from '@/components/ui/command';
-import { SimpleAnimeResult } from '@/hooks/useAnimeSearch';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { AnimeType } from '../integrations/supabase/types';
+import { Skeleton } from './ui/skeleton';
+import { AlertCircle, Star, Clock } from 'lucide-react';
 
-interface SearchResultsProps {
+type SearchResultsProps = {
+  results: AnimeType[] | null;
   isLoading: boolean;
-  searchTerm: string;
-  searchResults: SimpleAnimeResult[];
-  onSelectItem: (animeId: string) => void;
-}
+  closeDialog: () => void;
+};
 
-const SearchResults = ({ 
-  isLoading, 
-  searchTerm, 
-  searchResults, 
-  onSelectItem 
-}: SearchResultsProps) => {
+const SearchResults = ({ results, isLoading, closeDialog }: SearchResultsProps) => {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-6">
-        <Loader2 className="h-5 w-5 animate-spin text-anime-muted" />
+      <div className="space-y-2 py-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-start gap-3 p-2">
+            <Skeleton className="w-16 h-16 rounded-md" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-5 w-full max-w-[200px]" />
+              <Skeleton className="h-4 w-full max-w-[150px]" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
 
-  if (searchTerm.trim() === "") {
+  if (!results || results.length === 0) {
     return (
-      <div className="py-6 text-center text-sm text-anime-muted">
-        Ketik judul anime untuk mencari...
+      <div className="py-8 text-center">
+        <AlertCircle className="mx-auto h-10 w-10 text-muted-foreground/70 mb-2" />
+        <p className="text-muted-foreground font-medium">Tidak ada hasil yang ditemukan</p>
+        <p className="text-muted-foreground/60 text-sm mt-1">
+          Coba kata kunci lain atau cek ejaan
+        </p>
       </div>
-    );
-  }
-
-  if (searchResults.length === 0) {
-    return (
-      <CommandEmpty className="py-6 flex flex-col items-center justify-center">
-        <SearchX className="h-10 w-10 text-anime-muted mb-2" />
-        <p className="text-anime-muted">Tidak ada hasil ditemukan.</p>
-      </CommandEmpty>
     );
   }
 
   return (
-    <CommandGroup>
-      {searchResults.map((anime) => (
-        <CommandItem 
+    <div className="space-y-1 divide-y divide-border/60">
+      {results.map((anime) => (
+        <Link
           key={anime.id}
-          onSelect={() => onSelectItem(anime.id)}
-          className="flex items-center gap-2 p-2 cursor-pointer"
+          to={`/anime/${anime.id}`}
+          onClick={closeDialog}
+          className="flex gap-3 p-3 hover:bg-muted/50 transition-colors rounded-md group"
         >
-          <div className="h-10 w-10 rounded overflow-hidden flex-shrink-0">
-            <img 
-              src={anime.image_url} 
+          <div className="flex-shrink-0">
+            <img
+              src={anime.image_url || '/placeholder.svg'}
               alt={anime.title}
-              className="h-full w-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder.svg';
-              }}
+              className="w-16 h-20 object-cover rounded-md shadow-sm group-hover:shadow transition-all"
             />
           </div>
-          <div className="flex-grow">
-            <p className="font-medium truncate">{anime.title}</p>
-            <p className="text-xs text-anime-muted">{anime.release_year}</p>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-base group-hover:text-primary transition-colors truncate">
+              {anime.title}
+            </h4>
+            <p className="text-muted-foreground text-sm line-clamp-1">
+              {anime.description || "Tidak ada deskripsi"}
+            </p>
+            <div className="flex items-center gap-x-4 mt-1.5">
+              <div className="flex items-center text-amber-500 gap-1 text-xs">
+                <Star size={14} />
+                <span>{anime.rating || "N/A"}</span>
+              </div>
+              <div className="flex items-center text-muted-foreground gap-1 text-xs">
+                <Clock size={14} />
+                <span>{anime.release_year || "N/A"}</span>
+              </div>
+            </div>
           </div>
-        </CommandItem>
+        </Link>
       ))}
-    </CommandGroup>
+    </div>
   );
 };
 
