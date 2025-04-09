@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { AnimeType } from '../integrations/supabase/types';
+import { Anime } from '../lib/supabase';
 import { Skeleton } from './ui/skeleton';
 import { AlertCircle, Star, Clock } from 'lucide-react';
 
 type SearchResultsProps = {
-  results: AnimeType[] | null;
+  results: Anime[] | null;
   isLoading: boolean;
   closeDialog: () => void;
 };

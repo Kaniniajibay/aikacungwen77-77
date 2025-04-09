@@ -6,11 +6,42 @@ import { Input } from './ui/input';
 import { SearchIcon, X } from 'lucide-react';
 import SearchResults from './SearchResults';
 import { useAnimeSearch } from '../hooks/useAnimeSearch';
+import { Anime } from '@/lib/supabase';
 
-const SearchDialog = () => {
+// Cache for anime data to improve search performance
+let animeCache: Anime[] = [];
+
+// Function to update the anime cache
+export const updateAnimeCache = (recentAnime: Anime[], popularAnime: Anime[]) => {
+  // Combine and deduplicate anime by ID
+  const uniqueMap = new Map<string, Anime>();
+  
+  [...recentAnime, ...popularAnime].forEach(anime => {
+    if (!uniqueMap.has(anime.id)) {
+      uniqueMap.set(anime.id, anime);
+    }
+  });
+  
+  animeCache = Array.from(uniqueMap.values());
+  console.log(`Anime cache updated with ${animeCache.length} entries`);
+};
+
+// Export the anime cache for potential use in other components
+export const getAnimeCache = () => animeCache;
+
+interface SearchDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const { searchAnime, results, isLoading } = useAnimeSearch();
+
+  // Use the provided open state if available, otherwise use internal state
+  const dialogOpen = open !== undefined ? open : isOpen;
+  const setDialogOpen = onOpenChange || setIsOpen;
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -25,7 +56,7 @@ const SearchDialog = () => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2 bg-background/80 backdrop-blur-md border-muted-foreground/20 hover:bg-background/90">
           <SearchIcon size={16} />
@@ -60,7 +91,7 @@ const SearchDialog = () => {
           
           {query.length >= 2 && (
             <div className="max-h-[60vh] overflow-y-auto">
-              <SearchResults results={results} isLoading={isLoading} closeDialog={() => setIsOpen(false)} />
+              <SearchResults results={results} isLoading={isLoading} closeDialog={() => setDialogOpen(false)} />
             </div>
           )}
           

@@ -1,11 +1,10 @@
 
 import { useState, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { AnimeType } from '../integrations/supabase/types';
+import { supabase, Anime } from '../lib/supabase';
 import { toast } from '../hooks/use-toast';
 
 export const useAnimeSearch = () => {
-  const [results, setResults] = useState<AnimeType[] | null>(null);
+  const [results, setResults] = useState<Anime[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const searchAnime = useCallback(async (query: string) => {
@@ -27,7 +26,7 @@ export const useAnimeSearch = () => {
       }
       
       console.info(`Found ${data.length} results for query: ${query}`);
-      setResults(data as AnimeType[]);
+      setResults(data as Anime[]);
       
     } catch (error) {
       console.error('Error searching anime:', error);
