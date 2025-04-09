@@ -2,13 +2,12 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SearchDialog from './SearchDialog';
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
   
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -16,7 +15,7 @@ const NavBar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-anime-background/80 backdrop-blur-md border-b border-anime-primary/20">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-anime-background/95 backdrop-blur-md border-b border-anime-primary/20 shadow-sm">
       <div className="container px-4 mx-auto">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Desktop Nav */}
@@ -38,8 +37,10 @@ const NavBar = () => {
           
           {/* Search and Mobile Menu Toggle */}
           <div className="flex items-center gap-4">
-            {/* Menggunakan SearchDialog sebagai tombol pencarian */}
-            <SearchDialog />
+            {/* Menggunakan SearchDialog */}
+            <div className="relative">
+              <SearchDialog />
+            </div>
             
             <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMenu}>
               {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -54,9 +55,9 @@ const NavBar = () => {
         </div>
       </div>
       
-      {/* Mobile Menu */}
+      {/* Mobile Menu with improved styling */}
       {isMenuOpen && (
-        <div className="md:hidden bg-anime-card px-4 py-2 animate-fade-in">
+        <div className="md:hidden bg-anime-card/95 backdrop-blur-md px-4 py-2 animate-fade-in border-b border-anime-primary/10 shadow-lg">
           <div className="flex flex-col space-y-3 py-3">
             <MobileNavLink to="/" isActive={isActive('/')} onClick={toggleMenu}>Home</MobileNavLink>
             <MobileNavLink to="/browse" isActive={isActive('/browse')} onClick={toggleMenu}>Browse</MobileNavLink>
@@ -65,8 +66,6 @@ const NavBar = () => {
           </div>
         </div>
       )}
-      
-      {/* Menghapus SearchDialog di sini karena sudah ada di navbar */}
     </nav>
   );
 };
