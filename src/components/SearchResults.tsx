@@ -66,13 +66,14 @@ const SearchResults = ({ results, isLoading, closeDialog }: SearchResultsProps) 
             <div className="flex items-center gap-x-4 mt-1.5">
               <div className="flex items-center text-amber-500 gap-1 text-xs">
                 <Star size={14} />
-                {/* Using optional chaining to handle the missing 'rating' property */}
-                <span>{anime.release_year || "N/A"}</span>
+                <span>Tahun {anime.release_year || "N/A"}</span>
               </div>
-              <div className="flex items-center text-muted-foreground gap-1 text-xs">
-                <Clock size={14} />
-                <span>{anime.release_year || "N/A"}</span>
-              </div>
+              {anime.genres && anime.genres.length > 0 && (
+                <div className="flex items-center text-muted-foreground gap-1 text-xs">
+                  <Clock size={14} />
+                  <span>{anime.genres[0] || "N/A"}</span>
+                </div>
+              )}
             </div>
           </div>
         </Link>
