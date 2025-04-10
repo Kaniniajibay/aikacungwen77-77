@@ -1,7 +1,4 @@
 
-// This service worker allows the app to work offline
-// and provides faster loading times for returning visitors
-
 // Add type definitions for service worker
 interface ExtendableEvent extends Event {
   waitUntil(fn: Promise<any>): void;

@@ -9,3 +9,4 @@ bucket = "./dist"
 # Custom build command to bypass frozen lockfile issues
 [build]
 command = "bun install && bun run build"
+
