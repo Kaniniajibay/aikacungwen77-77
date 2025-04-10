@@ -5,3 +5,7 @@ compatibility_date = "2023-12-01"
 # Static site configuration
 [site]
 bucket = "./dist"
+
+# Custom build command to bypass frozen lockfile issues
+[build]
+command = "bun install && bun run build"
